@@ -53,10 +53,19 @@ void AsteroidDash::read_player(const string &player_file_name, const string &pla
     file >> pos_row;
     file >> pos_col;
 
-    std::string line;
-    while (std::getline(file, line)){
-        
+    std::vector<std::vector<bool>> player_grid;
+    std::vector<bool> row;
+    bool value;
+    while (file >> value){
+        row.push_back(value);
+
+        if (file.peek() == '\n' || file.eof()) {
+            player_grid.push_back(row);
+            row.clear();
+        }
     }
+
+    player = new Player(player_grid, pos_row, pos_col, player_name);
 
     file.close();
 }
