@@ -2,13 +2,16 @@ CC = g++
 CFLAGS = -std=c++11 -g
 LDFLAGS =
 
-SOURCES = $(wildcard *.cpp)
+SOURCES = $(filter-out main.cpp, $(wildcard *.cpp))
 HEADERS = $(wildcard *.h)
 HEADER_GCH = $(wildcard *.gch)
 
-all: AsteroidDash
+# Targets for each test
+TESTS = test
 
-AsteroidDash: $(SOURCES) $(HEADERS)
+all: $(TESTS)
+
+test: $(SOURCES) $(HEADERS)
 	$(CC) $(CFLAGS) $(SOURCES) $(LDFLAGS) -o $@
 
 clean:
