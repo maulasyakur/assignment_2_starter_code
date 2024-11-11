@@ -142,6 +142,77 @@ void AsteroidDash::read_celestial_objects(const string &input_file) {
         // create object
         CelestialObject* object = new CelestialObject(shape, type, starting_row, tick);
 
+        // create rotation doubly circular linked list
+        CelestialObject* ptr_prev = object;
+        std::vector<std::vector<bool>>* ptr_prev_shape = &ptr_prev->shape;
+        for (int delta = 90; delta < 360; delta += 90){
+            // rotate the shape
+            int row_size_prev = ptr_prev_shape->size();
+            int col_size_prev = (*ptr_prev_shape)[0].size();
+            std::vector<std::vector<bool>>* ptr_rotated_shape;
+            if (delta == 90){
+                ptr_rotated_shape = new std::vector<std::vector<bool>>(col_size_prev, std::vector<bool>(row_size_prev));
+                for (int i = 0; i < row_size_prev; i++){
+                    for (int j = 0; j < col_size_prev; j++){
+                        (*ptr_rotated_shape)[j][row_size_prev - 1 - i] = (*ptr_prev_shape)[i][j];
+                    }
+                }
+            }
+            else if (delta == 180){
+                ptr_rotated_shape = new std::vector<std::vector<bool>>(row_size_prev, std::vector<bool>(col_size_prev));
+                for (int i = 0; i < row_size_prev; i++){
+                    for (int j = 0; j < col_size_prev; j++){
+                        (*ptr_rotated_shape)[row_size_prev - 1 - i][col_size_prev - 1 - j] = (*ptr_prev_shape)[i][j];
+                    }
+                }
+            }
+            else if (delta == 270){
+                ptr_rotated_shape = new std::vector<std::vector<bool>>(col_size_prev, std::vector<bool>(row_size_prev));
+                for (int i = 0; i < row_size_prev; i++){
+                    for (int j = 0; j < col_size_prev; j++){
+                        (*ptr_rotated_shape)[col_size_prev - 1 - j][i] = (*ptr_prev_shape)[i][j];
+                    }
+                }
+            }
+
+            // compare the rotated shape to the other shapes in the linked list
+            int row_size_rotated = (*ptr_rotated_shape).size();
+            int col_size_rotated = (*ptr_rotated_shape)[0].size();
+            bool is_identical = false;
+            CelestialObject* ptr_check = object;
+            do{
+                row_size_prev = ptr_check->shape.size();
+                col_size_prev = ptr_check->shape[0].size();
+                if (row_size_prev == row_size_rotated && col_size_prev == col_size_rotated){
+                    is_identical = true;
+                    for (int i = 0; i < row_size_prev; i++){
+                        for (int j = 0; j < col_size_prev; j++){
+                            if ((ptr_check->shape)[i][j] != (*ptr_rotated_shape)[i][j]){
+                                is_identical = false;
+                                break;
+                            }
+                        }
+                        if (!is_identical) break;
+                    }
+                }
+
+                ptr_check = ptr_check->right_rotation;
+
+            } while(ptr_check != nullptr && !is_identical);
+
+            // if there is an identical shaped rotation, then skip this one rotation
+            if (is_identical) continue;
+            
+            CelestialObject* rotated_object = new CelestialObject(*ptr_rotated_shape, type, starting_row, tick);
+            ptr_prev->right_rotation = rotated_object;
+            rotated_object->left_rotation = ptr_prev;
+            ptr_prev = rotated_object;
+        }
+
+        // Complete the circular linking
+        object->left_rotation = ptr_prev;
+        ptr_prev->right_rotation = object;
+
         // link to the linked list
         if (celestial_objects_list_head == nullptr){
             celestial_objects_list_head = object;
@@ -151,7 +222,11 @@ void AsteroidDash::read_celestial_objects(const string &input_file) {
             while (ptr->next_celestial_object != nullptr){
                 ptr = ptr->next_celestial_object;
             }
-            ptr->next_celestial_object = object;
+
+            do{
+                ptr->next_celestial_object = object;
+                ptr = ptr->right_rotation;
+            } while (ptr->next_celestial_object != object);
         }
     }
     file.close();
@@ -180,4 +255,17 @@ void AsteroidDash::shoot() {
 // Destructor. Remove dynamically allocated member variables here.
 AsteroidDash::~AsteroidDash() {
     delete player;
+
+    while(celestial_objects_list_head != nullptr){
+        CelestialObject* ptr = celestial_objects_list_head->right_rotation;
+        while (ptr != celestial_objects_list_head){
+            CelestialObject* temp = ptr;
+            ptr = ptr->right_rotation;
+            delete temp;
+        }
+
+        CelestialObject* new_head = celestial_objects_list_head->next_celestial_object;
+        delete celestial_objects_list_head;
+        celestial_objects_list_head = new_head;
+    }
 }
