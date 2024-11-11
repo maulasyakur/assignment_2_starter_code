@@ -3,6 +3,10 @@
 
 #include <ctime>
 #include <string>
+#include <fstream>
+#include <iostream>
+#include <sstream>
+#include <iomanip>
 #include "LeaderboardEntry.h"
 
 #define MAX_LEADERBOARD_SIZE 10

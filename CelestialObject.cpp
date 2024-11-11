@@ -22,5 +22,14 @@ CelestialObject::CelestialObject(const CelestialObject *other)
 // Function to delete rotations of a given celestial object. It should free the dynamically allocated
 // memory for each rotation.
 void CelestialObject::delete_rotations(CelestialObject *target) {
-    
+    if (target->right_rotation == target || target->right_rotation == nullptr) return; // No rotations to delete
+
+    CelestialObject* ptr = target->right_rotation;
+    while (ptr != target) {
+        CelestialObject* temp = ptr;
+        ptr = ptr->right_rotation;
+        delete temp;
+    }
+
+    target->right_rotation = target; // Reset the rotation pointer for safety
 }
